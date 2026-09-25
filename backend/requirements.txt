@@ -1,0 +1,14 @@
+django-cors-headers==4.9.0
+django-filter==26.1
+Django==5.2.17
+djangorestframework==3.18.1
+djangorestframework_simplejwt==5.5.1
+openpyxl==3.1.5
+pillow==12.3.0
+psycopg-binary==3.3.6
+psycopg==3.3.6
+PyOTP==2.10.0
+python-dotenv==1.2.3
+qrcode==8.2
+reportlab==5.0.1
+requests==2.34.2

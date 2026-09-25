@@ -1,0 +1,15 @@
+# Tooling config for the Django backend. Lint with: ruff check .   Format check: ruff format --check .
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "C4"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test assertions read better on one line.
+"*/tests/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
