@@ -14,11 +14,16 @@ export const NAV = [
   { to: '/portal/registration', label: 'Course Registration', icon: 'register', show: isStudent },
   { to: '/portal/my-courses', label: 'My Courses', icon: 'book', show: isStudent },
   { to: '/portal/results', label: 'Results', icon: 'award', show: isStudent },
+  { to: '/portal/exams', label: 'Examinations', icon: 'clock', show: isStudent },
   { to: '/portal/attendance', label: 'Attendance', icon: 'check', show: isStudent },
   { to: '/portal/fees', label: 'Fees & Payments', icon: 'wallet', show: isStudent },
 
   // Staff
   { to: '/portal/teaching', label: 'My Courses', icon: 'book', show: (u) => isStaff(u) && can(u, 'courses.teach') },
+  {
+    to: '/portal/manage/results', label: 'Result Sheets', icon: 'award',
+    show: (u) => (isStaff(u) && can(u, 'courses.teach')) || can(u, 'results.approve_department', 'results.approve_faculty', 'results.publish'),
+  },
   { to: '/portal/fees', label: 'Fees & Payments', icon: 'wallet', show: (u) => !isStudent(u) && can(u, 'finance.view') },
 
   // Administration
@@ -26,6 +31,8 @@ export const NAV = [
   { to: '/portal/manage/students', label: 'Students', icon: 'users', show: (u) => can(u, 'students.view', 'students.manage') },
   { to: '/portal/manage/admissions', label: 'Admissions', icon: 'cap', show: (u) => can(u, 'admissions.manage') },
   { to: '/portal/manage/attendance', label: 'Attendance Reports', icon: 'check', show: (u) => can(u, 'attendance.view', 'attendance.approve') },
+  { to: '/portal/manage/exams', label: 'Exam Timetable', icon: 'clock', show: (u) => can(u, 'exams.manage') },
+  { to: '/portal/exams/verify', label: 'Verify Exam Cards', icon: 'qr', show: (u) => can(u, 'exams.invigilate', 'exams.manage') },
 
   // Everyone
   { to: '/portal/courses', label: 'Course Offerings', icon: 'catalog', show: isMember },

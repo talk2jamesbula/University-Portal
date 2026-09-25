@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .dashboard import DashboardView
+from .result_views import ResultSheetActionView, ResultSheetListView, ResultSheetView
 from .views import (
     CourseViewSet,
     DepartmentViewSet,
@@ -31,5 +32,8 @@ urlpatterns = [
     path("registration/", RegistrationView.as_view(), name="registration"),
     path("registration/history/", RegistrationHistoryView.as_view(), name="registration-history"),
     path("results/", ResultsView.as_view(), name="results"),
+    path("result-sheets/", ResultSheetListView.as_view(), name="result-sheets"),
+    path("result-sheets/<int:pk>/", ResultSheetView.as_view(), name="result-sheet"),
+    path("result-sheets/<int:pk>/<str:action>/", ResultSheetActionView.as_view(), name="result-sheet-action"),
     *router.urls,
 ]

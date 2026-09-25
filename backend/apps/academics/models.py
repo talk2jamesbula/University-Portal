@@ -275,3 +275,28 @@ class Enrollment(models.Model):
     @property
     def is_published(self):
         return self.result_status == self.ResultStatus.PUBLISHED
+
+
+class ResultAction(models.Model):
+    """One step in a course's results workflow (submitted, approved, returned, published), with who and why."""
+
+    class Action(models.TextChoices):
+        SUBMIT = "submit", "Submitted to HOD"
+        APPROVE_DEPARTMENT = "approve_department", "Approved by HOD"
+        APPROVE_FACULTY = "approve_faculty", "Approved by Dean"
+        PUBLISH = "publish", "Published"
+        RETURN = "return", "Returned to lecturer"
+
+    offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, related_name="result_actions")
+    action = models.CharField(max_length=20, choices=Action.choices)
+    from_status = models.CharField(max_length=24, choices=Enrollment.ResultStatus.choices)
+    to_status = models.CharField(max_length=24, choices=Enrollment.ResultStatus.choices)
+    note = models.CharField(max_length=500, blank=True)
+    by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-at"]
+
+    def __str__(self):
+        return f"{self.offering}: {self.get_action_display()}"

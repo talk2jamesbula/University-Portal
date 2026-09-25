@@ -11,6 +11,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
@@ -431,6 +432,7 @@ class Command(BaseCommand):
         self.create_status_history()
         self.create_finance()
         self.create_attendance()
+        call_command("seed_exams", stdout=self.stdout)
         self.create_admissions()
         self.create_news()
 

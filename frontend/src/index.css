@@ -1377,3 +1377,108 @@ fieldset.form:disabled input, fieldset.form:disabled select, fieldset.form:disab
 .field-inline input { height: 32px; }
 .import-steps p { margin: 0; }
 .field-inline > span { white-space: nowrap; }
+
+/* ==========================================================================
+   Examinations and result sheets
+   ========================================================================== */
+fieldset.field { border: 0; padding: 0; margin: 0; }
+.plain-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.page-actions > select {
+  height: 40px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface);
+}
+
+/* Result sheet score entry */
+.score-input {
+  width: 64px; height: 32px; padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface);
+}
+.score-input:focus { outline: none; border-color: var(--primary); box-shadow: var(--focus); }
+.score-input[aria-invalid='true'] { border-color: var(--red); background: var(--red-soft); }
+
+/* Timetable problems */
+.problem-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.problem { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; }
+.problem-error { color: var(--red); }
+.problem-warning { color: var(--amber); }
+.problem span { color: var(--text); }
+
+/* Venue picker in the exam form */
+.venue-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 8px; }
+.venue-option {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); cursor: pointer;
+}
+.venue-option.is-selected { border-color: var(--primary); background: var(--primary-soft); }
+.field .venue-option input { width: auto; height: auto; }
+
+/* CBT question editor */
+.option-row { display: flex; align-items: center; gap: 10px; }
+.field .option-row input[type='radio'] { width: 18px; height: 18px; flex-shrink: 0; }
+.option-row input:not([type='radio']) { flex: 1; }
+.choice-letter {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+  background: var(--surface-2); border: 1px solid var(--border-strong); font-size: 0.8rem; font-weight: 600; color: var(--text-2);
+}
+.question-list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 18px; }
+.question-list-head { display: flex; gap: 12px; align-items: flex-start; }
+.question-list-head .question-text { flex: 1; margin: 0; }
+.answer-key { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--text-2); }
+.answer-key li { display: flex; align-items: center; gap: 8px; }
+.answer-key li.is-correct { color: var(--green); font-weight: 600; }
+.answer-key li.is-correct .choice-letter { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+
+/* Sitting a CBT */
+.exam-shell { display: flex; flex-direction: column; gap: 16px; max-width: 1100px; }
+.exam-bar {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.exam-timer {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--surface-2);
+  font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.exam-timer.is-low { background: var(--red-soft); color: var(--red); }
+.exam-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+.question-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.question-text { font-size: 1.1rem; line-height: 1.55; margin: 8px 0 18px; white-space: pre-wrap; }
+.choice-list { display: flex; flex-direction: column; gap: 10px; }
+.choice {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  background: var(--surface); cursor: pointer; line-height: 1.4;
+}
+.choice:hover { border-color: var(--primary); }
+.choice input { position: absolute; opacity: 0; pointer-events: none; }
+.choice:has(input:focus-visible) { box-shadow: var(--focus); }
+.choice.is-selected { border-color: var(--primary); background: var(--primary-soft); }
+.choice.is-selected .choice-letter { background: var(--primary); border-color: var(--primary); color: #fff; }
+.question-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; }
+.question-nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; margin-bottom: 12px; }
+.qnav-btn {
+  height: 38px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2);
+  font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.qnav-btn.is-answered { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.qnav-btn.is-current { box-shadow: 0 0 0 2px var(--primary); }
+@media (max-width: 860px) {
+  .exam-layout { grid-template-columns: minmax(0, 1fr); }
+  .exam-bar { flex-wrap: wrap; }
+  .exam-timer { font-size: 1.1rem; }
+}
+
+/* Invigilators verifying exam cards */
+.verify-page { max-width: 720px; }
+.lookup-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.lookup-form input {
+  flex: 1; min-width: 200px; height: 40px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.verify-student { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.verify-student h2 { margin: 0 0 4px; font-size: 1.4rem; }
+.verify-exams { list-style: none; margin: 0; padding: 0; }
+.verify-exam { display: flex; gap: 16px; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.verify-exam:first-child { border-top: 0; }
+.verify-exam.is-today { background: color-mix(in srgb, var(--primary-soft) 55%, var(--surface)); }
+.verify-verdict { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.verdict { padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.verdict-ok { background: var(--green-soft); color: var(--green); }
+.verdict-no { background: var(--red-soft); color: var(--red); }

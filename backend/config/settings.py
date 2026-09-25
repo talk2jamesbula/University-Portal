@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.admissions",
     "apps.students",
     "apps.reports",
+    "apps.exams",
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,14 @@ TERMII_SENDER_ID = os.getenv("TERMII_SENDER_ID", "")
 # ATTENDANCE_MIN_PERCENT are flagged (75% is the usual requirement to sit examinations).
 ATTENDANCE_CODE_SECONDS = int(os.getenv("ATTENDANCE_CODE_SECONDS", "20"))
 ATTENDANCE_MIN_PERCENT = int(os.getenv("ATTENDANCE_MIN_PERCENT", "75"))
+
+# Examinations: students need ATTENDANCE_MIN_PERCENT in a course to sit its exam and, if
+# EXAM_REQUIRE_FEES_CLEARED, no overdue fees. CBT answers are accepted for EXAM_ANSWER_GRACE_SECONDS
+# after time runs out (network delay); attempts that leave the exam page EXAM_FOCUS_FLAG_AFTER
+# times or more are flagged for the lecturer.
+EXAM_REQUIRE_FEES_CLEARED = os.getenv("EXAM_REQUIRE_FEES_CLEARED", "1") == "1"
+EXAM_ANSWER_GRACE_SECONDS = int(os.getenv("EXAM_ANSWER_GRACE_SECONDS", "10"))
+EXAM_FOCUS_FLAG_AFTER = int(os.getenv("EXAM_FOCUS_FLAG_AFTER", "3"))
 
 # Course registration limits (units per semester).
 MIN_UNITS_PER_SEMESTER = int(os.getenv("MIN_UNITS_PER_SEMESTER", "15"))

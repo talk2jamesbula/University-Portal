@@ -27,7 +27,13 @@ export default function CourseRoster() {
       <PageHeader
         title={`${offering.code} · ${offering.title}`}
         subtitle={`${offering.semester_name} · ${offering.units} units · ${formatSchedule(offering)} · ${offering.venue}`}
-        actions={<Link to={`/portal/teaching/${id}/attendance`} className="btn btn-ghost"><Icon name="qr" size={16} /> Attendance</Link>}
+        actions={
+          <>
+            <Link to={`/portal/teaching/${id}/attendance`} className="btn btn-ghost"><Icon name="qr" size={16} /> Attendance</Link>
+            <Link to={`/portal/teaching/${id}/exam`} className="btn btn-ghost"><Icon name="clock" size={16} /> Exam</Link>
+            <Link to={`/portal/results/sheets/${id}`} className="btn btn-primary"><Icon name="award" size={16} /> Scores &amp; results</Link>
+          </>
+        }
       />
       <div className="stats-inline">
         <div><strong>{roster.length}</strong><span>Registered students</span></div>

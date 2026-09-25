@@ -14,12 +14,23 @@ function parseAttendanceLink(text) {
   }
 }
 
-/** Camera QR scanner. Calls onScan({ session, token }) once, when it sees an attendance QR code. */
-export default function QrScanner({ onScan, onCancel }) {
+const ATTENDANCE_TEXT = {
+  prompt: "Point your camera at the QR code on your lecturer's screen.",
+  wrong: "That QR code isn't a class attendance code. Point the camera at the QR code on your lecturer's screen.",
+  fallback: 'type the 6-digit code instead',
+  cancel: 'Type the code instead',
+}
+
+/**
+ * Camera QR scanner. Calls onScan(result) once, when `parse` recognises a QR code (by default an
+ * attendance link, giving { session, token }). `text` overrides the prompts for other kinds of code.
+ */
+export default function QrScanner({ onScan, onCancel, parse = parseAttendanceLink, text: overrides }) {
+  const text = { ...ATTENDANCE_TEXT, ...overrides }
   const videoRef = useRef(null)
   const supported = Boolean(navigator.mediaDevices?.getUserMedia)
   const [error, setError] = useState(
-    supported ? '' : 'This browser cannot use the camera here. Open the portal over HTTPS, or type the 6-digit code instead.',
+    supported ? '' : `This browser cannot use the camera here. Open the portal over HTTPS, or ${(overrides?.fallback ?? ATTENDANCE_TEXT.fallback)}.`,
   )
   const [wrongCode, setWrongCode] = useState(false)
 
@@ -41,7 +52,7 @@ export default function QrScanner({ onScan, onCancel }) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height)
         const found = jsQR(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height)
         if (found) {
-          const link = parseAttendanceLink(found.data)
+          const link = parse(found.data)
           if (link) {
             done = true
             onScan(link)
@@ -66,8 +77,8 @@ export default function QrScanner({ onScan, onCancel }) {
       .catch((err) => {
         setError(
           err?.name === 'NotAllowedError'
-            ? 'Camera access was blocked. Allow the camera for this site in your browser settings, or type the 6-digit code instead.'
-            : 'No camera could be started. Type the 6-digit code shown under the QR code instead.',
+            ? `Camera access was blocked. Allow the camera for this site in your browser settings, or ${text.fallback}.`
+            : `No camera could be started. Please ${text.fallback}.`,
         )
       })
 
@@ -76,7 +87,7 @@ export default function QrScanner({ onScan, onCancel }) {
       clearTimeout(timer)
       stream?.getTracks().forEach((t) => t.stop())
     }
-  }, [onScan, supported])
+  }, [onScan, parse, supported, text.fallback])
 
   return (
     <div className="qr-scanner">
@@ -89,10 +100,9 @@ export default function QrScanner({ onScan, onCancel }) {
         </div>
       )}
       <p className="muted small">
-        {wrongCode ? "That QR code isn't a class attendance code. Point the camera at the QR code on your lecturer's screen."
-          : "Point your camera at the QR code on your lecturer's screen."}
+        {wrongCode ? text.wrong : text.prompt}
       </p>
-      <button type="button" className="btn btn-ghost" onClick={onCancel}>Type the code instead</button>
+      <button type="button" className="btn btn-ghost" onClick={onCancel}>{text.cancel}</button>
     </div>
   )
 }

@@ -14,6 +14,13 @@ import CheckIn from './pages/attendance/CheckIn'
 import CourseAttendance from './pages/attendance/CourseAttendance'
 import MyAttendance from './pages/attendance/MyAttendance'
 import SessionDetail from './pages/attendance/SessionDetail'
+import ExamDetail, { CourseExam } from './pages/exams/ExamDetail'
+import ExamTimetable from './pages/exams/ExamTimetable'
+import MyExams from './pages/exams/MyExams'
+import TakeExam from './pages/exams/TakeExam'
+import VerifyCard from './pages/exams/VerifyCard'
+import ResultSheet from './pages/results/ResultSheet'
+import ResultSheets from './pages/results/ResultSheets'
 import CourseDetail from './pages/manage/CourseDetail'
 import Courses from './pages/manage/Courses'
 import Announcements from './pages/Announcements'
@@ -62,7 +69,11 @@ const managesAcademics = (u) => can(u, 'academics.manage')
 const seesStudentRecords = (u) => can(u, 'students.view', 'students.manage')
 const managesAdmissions = (u) => can(u, 'admissions.manage')
 const seesAttendanceAdmin = (u) => can(u, 'attendance.view', 'attendance.approve')
-const seesClassLists = (u) => teaches(u) || can(u, 'results.approve_department', 'results.approve_faculty', 'results.publish') || seesAttendanceAdmin(u)
+const reviewsResults = (u) => can(u, 'results.approve_department', 'results.approve_faculty', 'results.publish')
+const seesClassLists = (u) => teaches(u) || reviewsResults(u) || seesAttendanceAdmin(u)
+const seesResultSheets = (u) => teaches(u) || reviewsResults(u)
+const managesExams = (u) => can(u, 'exams.manage')
+const invigilates = (u) => can(u, 'exams.invigilate', 'exams.manage')
 
 /** The signed-in portal. Signed-out visitors are sent to sign in, then brought back. */
 function Portal() {
@@ -72,7 +83,7 @@ function Portal() {
   if (loading) return <div className="fullscreen-center"><Spinner /></div>
   if (!user && exitTo) return <Navigate to={exitTo} replace />
   if (!user) {
-    const staffOnly = ['/portal/teaching', '/portal/manage', '/portal/attendance/sessions']
+    const staffOnly = ['/portal/teaching', '/portal/manage', '/portal/attendance/sessions', '/portal/results/sheets', '/portal/exams/verify']
     const portal = location.pathname.startsWith('/portal/application') ? 'applicant'
       : staffOnly.some((p) => location.pathname.startsWith(p)) ? 'staff' : 'student'
     return <Navigate to={`/login/${portal}`} replace state={{ from: location.pathname + location.search }} />
@@ -90,6 +101,8 @@ function Portal() {
         <Route path="results" element={<Guard allow={isStudent}><Results /></Guard>} />
         <Route path="attendance" element={<Guard allow={isStudent}><MyAttendance /></Guard>} />
         <Route path="attend" element={<Guard allow={isStudent}><CheckIn /></Guard>} />
+        <Route path="exams" element={<Guard allow={isStudent}><MyExams /></Guard>} />
+        <Route path="exams/attempts/:id" element={<Guard allow={isStudent}><TakeExam /></Guard>} />
         <Route path="fees" element={
           <Guard allow={(u) => isStudent(u) || seesFinance(u)}>{isStudent(user) ? <StudentFees /> : <FinanceAdmin />}</Guard>
         } />
@@ -99,6 +112,9 @@ function Portal() {
         <Route path="teaching/:id" element={<Guard allow={seesClassLists}><CourseRoster /></Guard>} />
         <Route path="teaching/:id/attendance" element={<Guard allow={seesClassLists}><CourseAttendance /></Guard>} />
         <Route path="attendance/sessions/:id" element={<Guard allow={seesClassLists}><SessionDetail /></Guard>} />
+        <Route path="teaching/:id/exam" element={<Guard allow={(u) => teaches(u) || managesExams(u)}><CourseExam /></Guard>} />
+        <Route path="results/sheets/:id" element={<Guard allow={seesResultSheets}><ResultSheet /></Guard>} />
+        <Route path="exams/verify" element={<Guard allow={invigilates}><VerifyCard /></Guard>} />
         <Route path="fees/students/:id" element={<Guard allow={seesFinance}><StudentAccount /></Guard>} />
         {/* Administration */}
         <Route path="manage/courses" element={<Guard allow={managesAcademics}><Courses /></Guard>} />
@@ -108,6 +124,9 @@ function Portal() {
         <Route path="manage/admissions" element={<Guard allow={managesAdmissions}><AdmissionsList /></Guard>} />
         <Route path="manage/admissions/:id" element={<Guard allow={managesAdmissions}><ApplicationReview /></Guard>} />
         <Route path="manage/attendance" element={<Guard allow={seesAttendanceAdmin}><AttendanceReports /></Guard>} />
+        <Route path="manage/results" element={<Guard allow={seesResultSheets}><ResultSheets /></Guard>} />
+        <Route path="manage/exams" element={<Guard allow={managesExams}><ExamTimetable /></Guard>} />
+        <Route path="manage/exams/:id" element={<Guard allow={(u) => managesExams(u) || teaches(u)}><ExamDetail /></Guard>} />
         {/* Everyone */}
         <Route path="courses" element={<Guard allow={isMember}><CourseOfferings /></Guard>} />
         <Route path="announcements" element={<Guard allow={isMember}><Announcements /></Guard>} />

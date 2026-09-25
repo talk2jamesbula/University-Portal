@@ -30,12 +30,15 @@ Student photos (`frontend/src/assets/students/`) are Creative Commons images fro
 - Student record: programme and personal details, plus editable contact, next-of-kin and emergency details
 - Fees and payments: statements per semester, Paystack online payment, proof-of-payment upload for bank/POS payments, PDF receipts (also emailed) and invoices
 - Attendance: check in to a class by scanning the lecturer's QR code or typing its 6-digit code; attendance percentage and full history per course, with a warning below the 75% requirement
+- Examinations: personal exam timetable with venue and seat, eligibility per course (with the reason if blocked), a PDF exam card with photo and QR code, and computer-based tests sat in the browser
 - In-app notifications (with email and SMS alerts for important events)
 
 **Lecturers**
 - Dashboard with assigned courses, registered students, today's classes and pending results
 - Class lists with matric numbers, levels, carry-over flags and scores
 - Attendance: create sessions, start check-in with a rotating QR code (with a full-screen projector view), mark students by hand, close sessions (everyone else is marked absent), request corrections to closed sessions, and per-student statistics
+- Result sheets: enter CA and exam scores, submit to the HOD, and see where the results are in the approval chain
+- Computer-based tests: write multiple-choice and true/false questions, see submitted papers (with how often each candidate left the page), and send the marks to the result sheet
 - Announcements to the students of their courses
 
 **Administration (by role)**
@@ -45,6 +48,8 @@ Student photos (`frontend/src/assets/students/`) are Creative Commons images fro
 - **Student Management** (`students.manage`: Registrar, super admin; `students.view`: HODs and Deans for their department or faculty, and the VC): search and filter students (faculty, department, programme, level, status, session, gender, portal access) with pagination; create and edit students (matric number, Student ID, username and a temporary password are generated automatically); import from CSV or Excel (every row checked first, all-or-nothing) and export to CSV/Excel; change academic status with a reason (history kept, student notified); activate or deactivate portal access; reset passwords; passport photographs and private documents. Each student has a profile page with tabs for Overview, Academic Records, Courses, Attendance, Results, Fees, Documents, Accommodation and Activity History
 - Bursary: collection totals, student balances, charges, payments, proof-of-payment review
 - **Admissions** (`admissions.manage`: Admission Officer, Registrar): applications by status, search (name, email, application or JAMB number), filters (faculty, programme, entry mode, fee paid), sorting by aggregate score, CSV/Excel export; per application: verify or reject each document, record the post-UTME screening score (aggregate = UTME ÷ 8 + screening ÷ 2), approve for the first or second choice, waitlist or reject with a reason, issue the admission letter, internal notes, and the full history; admission exercise settings (fee, dates, UTME cut-off, acceptance deadline)
+- **Examinations** (`exams.manage`: Examination Officer, super admin): venues and CBT centres; the exam timetable with clash and seating checks; seat allocation; publishing (every candidate is emailed); eligibility per candidate with waivers; printing exam cards. See [Examinations](#examinations)
+- **Result approval** (HOD, Dean, Examination Officer / Registrar): approve, return with a note, or publish each course's results
 - Attendance reports filtered by semester, faculty, department, course and student, with at-risk students highlighted and CSV/Excel export; HODs and the Registrar approve attendance corrections
 - Announcements to the whole university, one audience, or a department
 - Audit log and sign-in history
@@ -120,6 +125,17 @@ Other students sign in with their matric number without slashes in lower case (e
 - **Grading (NUC five-point scale):** CA out of 30 plus examination out of 70. A 70–100 (5), B 60–69 (4), C 50–59 (3), D 45–49 (2), E 40–44 (1), F 0–39 (0). GPA and CGPA are unit-weighted and rounded half up to two decimals. Classes of degree run from First Class (4.50+) down to Pass (1.00–1.49); a CGPA below 1.00 means probation.
 - **Results workflow:** each result moves *draft → submitted to HOD → approved by HOD → approved by Dean → published*. Students only ever see published results.
 
+## Examinations
+
+- **Timetable.** The Examinations Office adds venues (seats, and whether each is a CBT centre), then schedules one exam per course offering: date, start time, duration, mode (*paper* or *CBT*) and one or more venues. The timetable page lists problems to fix: students with two exams at once, venues too small, exams without a venue, CBTs without questions or outside a CBT centre. Drafts are invisible to students; **Publish** gives every candidate a seat and emails them once. Moving a published exam (date, time or venue) emails and texts its candidates.
+- **Seating.** Seats are numbered per venue and filled in matric-number order. Allocating again only seats students who registered late (printed cards stay right), and halls shared by exams at the same time never give out the same seat twice.
+- **Eligibility.** A student may sit a course's exam if they are registered for it, have at least `ATTENDANCE_MIN_PERCENT` (75%) attendance once classes have been recorded, and (if `EXAM_REQUIRE_FEES_CLEARED`) have no overdue fees. The Examinations Office can grant a waiver with a reason (audited; the student is notified). Eligibility is always worked out live, so it follows payments and attendance changes.
+- **Exam cards.** Students download a PDF card listing their eligible exams with venue and seat, their photo, and a QR code signed with the server's secret key. Invigilators (`exams.invigilate`: lecturers and the Examinations Office) open **Verify Exam Cards**, scan the card or type the matric number, see the student's photo and live eligibility, and admit them to the hall; check-ins are recorded.
+- **Computer-based tests.** The course lecturer writes multiple-choice or true/false questions (one correct option each) and may draw a random subset per candidate. Each candidate's paper is shuffled (questions and options) when they start. The clock runs on the server: answers are autosaved and refused once time is up (plus `EXAM_ANSWER_GRACE_SECONDS`), and papers still open are submitted automatically. One attempt per student is enforced by the database. Entry closes `late_entry_minutes` after the start. Leaving the exam page is logged, and candidates who do it `EXAM_FOCUS_FLAG_AFTER` times are flagged. Questions lock when the exam starts, and correct answers are never sent to students.
+- **Into the results.** The lecturer sends CBT marks, scaled to 70, into the course's result sheet as exam scores; paper exams are entered by hand. The sheet then goes through the results workflow below.
+- **Results workflow.** The lecturer enters CA and exam scores and submits (every student needs both). The HOD approves, then the Dean, then the Examinations Office or Registrar publishes, and students are emailed. At each stage the reviewer can return the sheet to the lecturer with a note. Nobody approves a course they teach, and each step is kept in the sheet's history and the audit log.
+- **Demo data.** `seed_demo` includes a published timetable. To add one to an existing database, run `python manage.py seed_exams`; add `--live-cbt` to open the GST211 CBT now (sign in as `student` to sit it).
+
 ## Roles and permissions
 
 Access is controlled by **permission codes** (e.g. `finance.manage`, `results.publish`), listed in `backend/apps/accounts/rbac.py`. Every user has an account type (*student*, *staff*, *applicant* or *super admin*). Staff get **role appointments**, and each role grants a set of permissions:
@@ -131,8 +147,8 @@ Access is controlled by **permission codes** (e.g. `finance.manage`, `results.pu
 | Bursar / Finance Officer | University | finance (view and manage) |
 | Dean | A faculty | approve faculty results, view attendance, announcements |
 | Head of Department | A department | approve department results, view attendance and approve corrections, announcements |
-| Lecturer | — | teach assigned courses |
-| Examination Officer | University | exam timetables and venues, result publication |
+| Lecturer | — | teach assigned courses, enter scores, set CBT questions, invigilate |
+| Examination Officer | University | exam timetables and venues, eligibility waivers, exam cards, invigilation, result publication |
 | Admission Officer, Librarian, Hostel Officer, Support Officer | University | their service areas |
 
 The default roles are created automatically when you migrate. Their permissions can be changed through the API (`/api/roles/`) or the Django admin without touching code. Appointments are made with `/api/role-assignments/` (the Registry), and a Dean or HOD must be tied to their faculty or department. Super admins hold every permission.
@@ -244,6 +260,7 @@ backend/
     payments.py             application fee through Paystack
     documents.py            PDF admission letters and fee receipts
   apps/attendance/          AttendanceSession, AttendanceRecord, AttendanceCorrection
+  apps/exams/               Venue, Exam, Candidate (seat, waiver, check-in), CBT Question/Choice/Attempt/Answer; exam cards
     services.py             rotating codes, check-in safeguards, marking, closing, corrections, statistics
   apps/finance/             FeeType, Charge, Payment, GatewayTransaction, PaymentProof
     services.py             fees, balances, record/void payments, proof review
@@ -263,6 +280,8 @@ frontend/
   src/pages/students/       student list, create/edit form, import, profile page with tabs
   src/pages/admissions/     applicant home and application form; Admissions Office list and review
   src/pages/attendance/     student check-in and history, lecturer sessions and live QR, reports and corrections
+  src/pages/exams/          student timetable and CBT, exam timetable and venues, exam detail, card verification
+  src/pages/results/        result sheets: score entry and approvals
   src/utils/                useApi (race-safe data loading), useDebounced, formatting helpers
   src/index.css             design tokens and all styles
 ```
@@ -341,6 +360,19 @@ All endpoints are under `/api/` and require `Authorization: Bearer <access token
 | GET | `attendance/offerings/{id}/stats/` | the lecturer; `attendance.view` | Per-student attendance for a course |
 | POST | `attendance/records/{id}/correction/` | the lecturer | Request a correction to a closed session `{to_status, reason}` |
 | GET/POST | `attendance/corrections/`, `corrections/{id}/decide/` | requester; `attendance.approve` | Correction queue; `{approve, note}` |
+| GET | `academics/result-sheets/?status=mine` | lecturers and result reviewers | Courses whose results the user teaches or reviews, with the actions open to them |
+| GET/PATCH | `academics/result-sheets/{offering}/` | the lecturer (PATCH); reviewers in scope | The result sheet; PATCH `{scores: [{enrollment, ca_score, exam_score}]}` while in draft |
+| POST | `academics/result-sheets/{offering}/submit/`, `approve/`, `return/` | lecturer; HOD, Dean, `results.publish` | `{note}` (required to return). Approve moves to the next stage; the last one publishes |
+| GET/POST/PATCH/DELETE | `exams/venues/` | read: members; write: `exams.manage` | Exam halls and CBT centres |
+| GET/POST/PATCH/DELETE | `exams/timetable/?semester=<id>` | `exams.manage`; lecturers see their own (read) | Exams; DELETE drafts only |
+| GET | `exams/timetable/problems/`, `unscheduled/` | `exams.manage` | Clashes and seating problems; offerings without an exam |
+| POST | `exams/timetable/publish/`, `timetable/{id}/allocate-seats/`, `timetable/{id}/waive/` | `exams.manage` | Publish drafts `{semester, exams?}`; seat late registrants; `{student, waived, reason}` |
+| GET | `exams/timetable/{id}/candidates/`, `attempts/` | `exams.manage`; the lecturer | Eligibility, seats and check-ins; CBT papers with scores and page-leave counts |
+| GET/POST, PUT/DELETE | `exams/timetable/{id}/questions/`, `exams/questions/{id}/` | the lecturer | CBT questions (locked once the exam starts) |
+| PATCH/POST | `exams/timetable/{id}/settings/`, `release-scores/` | the lecturer | Instructions and questions per candidate; copy CBT marks (scaled to 70) to the result sheet |
+| GET | `exams/me/`, `exams/me/card/`, `exams/cards/{student}/` | student; `exams.manage` | Own timetable and eligibility; PDF exam card |
+| POST, GET, PUT, POST | `exams/timetable/{id}/start/`, `exams/attempts/{id}/`, `answer/`, `event/`, `submit/` | student | Sit a CBT: start or resume, autosave `{question, choice}`, log leaving the page, submit |
+| GET/POST | `exams/verify/?code=` or `?matric=`, `exams/verify/check-in/` | `exams.invigilate`, `exams.manage` | Check an exam card; admit `{exam, student}` on the day |
 | GET | `attendance/reports/`, `reports/export/?file=csv\|xlsx` | `attendance.view` (scoped) | Report per student and course; filters `semester`, `faculty`, `department`, `offering`, `student`, `search`, `at_risk=true` |
 
 Lists support `?search=`, `?ordering=`, and the filter fields declared on each view.
@@ -363,6 +395,7 @@ npm run build
 - Backend settings are read from `backend/.env`. See `backend/.env.example`.
 - To use your university's name in the UI, set `VITE_UNIVERSITY_NAME` in `frontend/.env.local`.
 - Attendance: `ATTENDANCE_CODE_SECONDS` (how often check-in codes change, default 20) and `ATTENDANCE_MIN_PERCENT` (default 75).
+- Examinations: `EXAM_REQUIRE_FEES_CLEARED` (1: overdue fees block exams), `EXAM_ANSWER_GRACE_SECONDS` (10) and `EXAM_FOCUS_FLAG_AFTER` (3).
 - For students to scan attendance QR codes from their phones, the portal must be reachable from the phones, and the host must be in `DJANGO_ALLOWED_HOSTS`. The QR link uses the address the lecturer opened the portal on, so open it by the university domain (or the machine's network address during testing), not `localhost`.
 
 ## Deploying to production

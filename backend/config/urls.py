@@ -35,5 +35,6 @@ urlpatterns = [
     path("api/admissions/", include("apps.admissions.urls")),
     path("api/students/", include("apps.students.urls")),
     path("api/reports/", include("apps.reports.urls")),
+    path("api/exams/", include("apps.exams.urls")),
     path("media/avatars/<path:path>", avatar_file),
 ]

@@ -3,7 +3,17 @@ from django.contrib.auth import get_user_model
 
 from apps.finance.services import assess_semester_fees
 
-from .models import Course, CourseOffering, Department, Enrollment, Faculty, Programme, ProgrammeCourse, Semester
+from .models import (
+    Course,
+    CourseOffering,
+    Department,
+    Enrollment,
+    Faculty,
+    Programme,
+    ProgrammeCourse,
+    ResultAction,
+    Semester,
+)
 
 
 @admin.register(Faculty)
@@ -80,3 +90,10 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_filter = ["status", "result_status", "offering__semester"]
     search_fields = ["student__university_id", "student__last_name", "offering__course__code"]
     raw_id_fields = ["student", "offering"]
+
+
+@admin.register(ResultAction)
+class ResultActionAdmin(admin.ModelAdmin):
+    list_display = ["offering", "action", "from_status", "to_status", "by", "at"]
+    list_filter = ["action", "offering__semester"]
+    search_fields = ["offering__course__code", "note"]
