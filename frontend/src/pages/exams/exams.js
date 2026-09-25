@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import useApi from '../../utils/useApi'
+
 /** Shared examination labels and small helpers. */
 
 export const EXAM_STATUS_TONE = { draft: 'neutral', published: 'green' }
@@ -34,4 +37,15 @@ export function parseCardLink(text) {
   } catch {
     return null
   }
+}
+
+/** The student's exams, refreshed every minute so a CBT's Start button appears as soon as it opens. */
+export function useMyExams() {
+  const result = useApi('/exams/me/')
+  const { reload } = result
+  useEffect(() => {
+    const timer = setInterval(reload, 60_000)
+    return () => clearInterval(timer)
+  }, [reload])
+  return result
 }

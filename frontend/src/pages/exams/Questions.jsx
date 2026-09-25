@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import api, { errorMessage } from '../../api/client'
+import api, { blobErrorMessage, downloadFile, errorMessage } from '../../api/client'
 import Icon from '../../components/Icon'
 import { Alert, Card, EmptyState, Modal, Spinner } from '../../components/ui'
 import useApi from '../../utils/useApi'
+import ImportQuestionsModal from './ImportQuestionsModal'
 
 const LETTERS = 'ABCDEF'
 const blankChoices = () => [0, 1, 2, 3].map((i) => ({ text: '', is_correct: i === 0 }))
@@ -126,12 +127,16 @@ export default function Questions({ exam, onExamChange }) {
   const [editing, setEditing] = useState(null)
   const [removing, setRemoving] = useState(null)
   const [actionError, setActionError] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [imported, setImported] = useState('')
 
   if (error && !data) return <Alert>{error}</Alert>
   if (!data) return <Spinner />
 
   const { questions, locked } = data
   const marks = questions.reduce((sum, q) => sum + q.marks, 0)
+  const download = () => downloadFile(`/exams/timetable/${exam.id}/questions/template/`, { file: 'xlsx' }, `${exam.code}-questions.xlsx`)
+    .catch(async (err) => setActionError(await blobErrorMessage(err)))
   const remove = async () => {
     try {
       await api.delete(`/exams/questions/${removing.id}/`)
@@ -147,14 +152,22 @@ export default function Questions({ exam, onExamChange }) {
     <div className="stack-lg">
       {locked && <Alert tone="info">The exam has started, so its questions are locked.</Alert>}
       <Alert onClose={() => setActionError('')}>{actionError}</Alert>
+      <Alert tone="success" onClose={() => setImported('')}>{imported}</Alert>
       <Card title="Settings"><SettingsForm exam={exam} total={questions.length} locked={locked} onSaved={onExamChange} /></Card>
       <Card
         title={`Questions (${questions.length}) · ${marks} mark${marks === 1 ? '' : 's'}`}
-        action={!locked && <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Add question</button>}
+        action={
+          <span className="row-actions">
+            {questions.length > 0 && <button className="btn btn-ghost btn-sm" onClick={download}><Icon name="download" size={14} /> Download</button>}
+            {!locked && <button className="btn btn-ghost btn-sm" onClick={() => setImporting(true)}><Icon name="register" size={14} /> Import from file</button>}
+            {!locked && <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Add question</button>}
+          </span>
+        }
       >
         {questions.length === 0 ? (
           <EmptyState icon="register" title="No questions yet">
-            Add multiple-choice or true/false questions. Scores are marked automatically and scaled to 70.
+            Add multiple-choice or true/false questions one at a time, or import a whole bank from a CSV or Excel file.
+            Scores are marked automatically and scaled to 70.
           </EmptyState>
         ) : (
           <ol className="question-list">
@@ -188,6 +201,19 @@ export default function Questions({ exam, onExamChange }) {
           question={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); reload() }}
+        />
+      )}
+      {importing && (
+        <ImportQuestionsModal
+          exam={exam}
+          existing={questions.length}
+          onClose={() => setImporting(false)}
+          onSaved={(result) => {
+            setImporting(false)
+            setImported(`Imported ${result.valid} question${result.valid === 1 ? '' : 's'}. The exam now has ${result.total}.`)
+            reload()
+            onExamChange()
+          }}
         />
       )}
       {removing && (

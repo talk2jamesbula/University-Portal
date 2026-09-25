@@ -1482,3 +1482,4 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 .verdict { padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .verdict-ok { background: var(--green-soft); color: var(--green); }
 .verdict-no { background: var(--red-soft); color: var(--red); }
+.exam-alert { border-color: var(--primary); }

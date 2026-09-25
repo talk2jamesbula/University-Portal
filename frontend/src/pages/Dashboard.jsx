@@ -15,6 +15,8 @@ import {
 } from '../utils/format'
 import useApi from '../utils/useApi'
 import Analytics from './Analytics'
+import { ExamAlerts, UpcomingExams } from './exams/DashboardExams'
+import { useMyExams } from './exams/exams'
 import WeekSchedule from './WeekSchedule'
 
 const REGISTRATION_STATE = {
@@ -53,11 +55,13 @@ function StudentHeader({ user, data }) {
 function StudentView({ user, data }) {
   const { stats, registration } = data
   const { data: attendance } = useApi('/attendance/me/')
+  const { data: exams } = useMyExams()
   const lowAttendance = attendance?.courses.filter((c) => c.at_risk) ?? []
   const regState = registration && REGISTRATION_STATE[registration.state]
   return (
     <>
       <StudentHeader user={user} data={data} />
+      {exams && <ExamAlerts exams={exams.exams} />}
 
       {stats.balance > 0 && (
         <div className={`callout ${stats.overdue > 0 ? 'callout-danger' : ''}`}>
@@ -92,13 +96,16 @@ function StudentView({ user, data }) {
       </div>
 
       <div className="grid-2-1">
-        <Card title="Lecture timetable" action={<Link to="/portal/my-courses" className="link">My courses</Link>}>
-          {data.schedule.length ? <WeekSchedule courses={data.schedule} /> : (
-            <EmptyState icon="calendar" title="No courses registered yet">
-              {registration?.is_open ? <Link to="/portal/registration" className="link">Register your courses</Link> : 'Registration is closed.'}
-            </EmptyState>
-          )}
-        </Card>
+        <div className="stack-lg">
+          <Card title="Lecture timetable" action={<Link to="/portal/my-courses" className="link">My courses</Link>}>
+            {data.schedule.length ? <WeekSchedule courses={data.schedule} /> : (
+              <EmptyState icon="calendar" title="No courses registered yet">
+                {registration?.is_open ? <Link to="/portal/registration" className="link">Register your courses</Link> : 'Registration is closed.'}
+              </EmptyState>
+            )}
+          </Card>
+          {exams && <UpcomingExams exams={exams.exams} />}
+        </div>
         <SideColumn data={data} />
       </div>
       <AnnouncementsCard items={data.announcements} />

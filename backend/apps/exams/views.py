@@ -1,21 +1,24 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.academics.models import CourseOffering, Enrollment, Semester
 from apps.academics.services import current_semester
 from apps.accounts.permissions import IsMember, IsStudent, Requires
+from apps.core import spreadsheets
 from apps.core.services import audit, client_ip
 from apps.finance.views.common import pdf_response
 
-from . import services
+from . import services, uploads
 from .documents import card_number, exam_card_pdf
 from .models import Attempt, Exam, Question, Venue
 from .serializers import (
@@ -78,6 +81,10 @@ def _seat(candidate):
         "checked_in_at": candidate.checked_in_at if candidate else None,
         "waiver_reason": candidate.waiver_reason if candidate and candidate.waived else "",
     }
+
+
+def _flag(request, name):
+    return str(request.data.get(name, "")).lower() in ("1", "true", "yes")
 
 
 def _eligibility(row):
@@ -304,6 +311,32 @@ class ExamViewSet(viewsets.ModelViewSet):
                 "questions": QuestionSerializer(exam.questions.prefetch_related("choices"), many=True).data,
             }
         )
+
+    @action(detail=True, methods=["post"], url_path="questions/upload", parser_classes=[MultiPartParser])
+    def upload_questions(self, request, pk=None):
+        """POST a CSV/Excel file of questions (multipart `file`; `dry_run=true` to only check it;
+        `replace=true` to replace the exam's questions instead of adding to them)."""
+        exam = self.get_object()
+        file = request.FILES.get("file")
+        if not file:
+            raise ValidationError({"file": "Choose a CSV or Excel file."})
+        result = uploads.upload(
+            exam, file, request.user, request, dry_run=_flag(request, "dry_run"), replace=_flag(request, "replace")
+        )
+        return Response(result, status=status.HTTP_201_CREATED if result["saved"] else status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="questions/template")
+    def questions_template(self, request, pk=None):
+        """The exam's questions in upload format (?file=csv|xlsx), or an example file if it has none."""
+        exam = self.get_object()
+        services.ensure_setter(request.user, exam)
+        file_format = "xlsx" if request.query_params.get("file") == "xlsx" else "csv"
+        response = HttpResponse(
+            uploads.template(exam, file_format),
+            content_type=spreadsheets.XLSX if file_format == "xlsx" else "text/csv",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{exam.offering.course.code}-questions.{file_format}"'
+        return response
 
     @action(detail=True, methods=["get"])
     def attempts(self, request, pk=None):

@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import api, { blobErrorMessage, downloadFile, errorMessage } from '../../api/client'
 import Icon from '../../components/Icon'
 import { Alert, Badge, Card, EmptyState, Modal, PageHeader, Spinner } from '../../components/ui'
 import { formatClock, formatDate, formatTime } from '../../utils/format'
-import useApi from '../../utils/useApi'
 import { formatPercent } from '../attendance/attendance'
-import { ATTEMPT_TONE, MODE_TONE, formatDuration } from './exams'
+import { ATTEMPT_TONE, MODE_TONE, formatDuration, useMyExams } from './exams'
 
 function StartModal({ exam, onClose }) {
   const navigate = useNavigate()
@@ -61,8 +60,9 @@ function Eligibility({ exam }) {
 
 /** A student's exam timetable, eligibility and exam card; computer-based tests start from here. */
 export default function MyExams() {
-  const { data, error } = useApi('/exams/me/')
-  const [starting, setStarting] = useState(null)
+  const { data, error } = useMyExams()
+  const [params, setParams] = useSearchParams()
+  const [picked, setPicked] = useState(null)
   const [cardError, setCardError] = useState('')
   const [downloading, setDownloading] = useState(false)
 
@@ -70,6 +70,13 @@ export default function MyExams() {
   if (!data) return <Spinner />
 
   const blocked = data.exams.filter((e) => !e.eligible)
+  // Arriving from the dashboard's "Start exam" button (?start=<exam id>) opens the start dialog.
+  const requested = data.exams.find((e) => e.id === Number(params.get('start')) && e.can_start)
+  const starting = picked ?? requested
+  const setStarting = (exam) => {
+    setPicked(exam)
+    if (!exam && params.get('start')) setParams({}, { replace: true })
+  }
   const download = async () => {
     setDownloading(true)
     setCardError('')
